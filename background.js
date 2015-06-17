@@ -4,6 +4,9 @@ divPlayer.setAttribute("id", "player");
 document.body.appendChild(divPlayer);
 
 //Injecter l'API de Youtube
+
+// https://developers.google.com/youtube/iframe_api_reference
+
 var tag = document.createElement('script');
 tag.src = "https://www.youtube.com/iframe_api";
 var firstScriptTag = document.getElementsByTagName('script')[0];
