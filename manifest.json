@@ -7,6 +7,9 @@
         "default_title": "That's the tool tip",
         "default_popup": "browseraction/popup.html"
     },
+    "permissions": [
+          "tabs"
+        ],
     "background": {
         "scripts": ["background.js"],
         "persistent": true
