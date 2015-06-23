@@ -1,16 +1,14 @@
 window.onload = function() {
     document.getElementById("btnPlay").onclick = function() {
 		chrome.extension.sendMessage({
-			action: this.value
+			action: "Play"
 		});
-		
-        this.value = this.value == "Play" ? "Stop" : "Play";
     }
 	
     document.getElementById("btnAddUrl").onclick = function() {
         chrome.extension.sendMessage({
             action: "AddUrl",
-            data: document.getElementById("txtYoutubeUrl")
+            data: document.getElementById("txtYoutubeUrl").value
         });
     }
 
