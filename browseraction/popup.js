@@ -51,6 +51,10 @@ window.onload = function() {
             action: this.value
         });
     }
+	
+	chrome.extension.sendMessage({
+		action: "GetInfo"
+	});
 }
 
 chrome.extension.onMessage.addListener(function(request, sender, sendResponse) 
@@ -61,11 +65,20 @@ chrome.extension.onMessage.addListener(function(request, sender, sendResponse)
     switch(request.action) 
     {
         case "DisplayInfo":
-
+			document.getElementById("btnPlay").hidden = request.data.status != "playing"
+			document.getElementById("btnStop").hidden = request.data.status == "playing";
+			var select = document.getElementById('selectMusiques');
+			select.options[0] = new Option(request.data.previous.id, '');
+			select.options[1] = new Option(request.data.current.id, '');
+			select.options[2] = new Option(request.data.next.id, '');
         break;
         case "ChangeSongPlaying":
         
         break;
+		case "ChangePlayStatus":
+		//document.getElementById("btnPlay").hidden = request.data;
+		//document.getElementById("btnStop").hidden = !request.data;
+		break;
     }
 
     return true;
