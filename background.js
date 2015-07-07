@@ -19,6 +19,50 @@ var playerStatus;
 var shuffled = false;
 var loops = false;
 
+// First, checks if it isn't implemented yet.
+if (!String.prototype.format) {
+  String.prototype.format = function() {
+    var args = arguments;
+    return this.replace(/{(\d+)}/g, function(match, number) { 
+      return typeof args[number] != 'undefined'
+        ? args[number]
+        : match
+      ;
+    });
+  };
+}
+
+function GetVideoData(id, callback)
+{
+	//see https://developers.google.com/youtube/v3/getting-started
+	var parts = "snippet";
+	var fields = "snippet(title)";
+	var parts = ["snippet"];
+	var api_key = "AIzaSyDRKWm5fN5nDmAzOCFqLvw6b4dmez_1byE";
+	var s = "https://www.googleapis.com/youtube/v3/videos?id={0}&key={1}&fields=items({2})&part={3}";
+	
+	s = s.format(
+		id, 
+		api_key, 
+		fields,
+		parts.join(','));
+	$.ajax({
+		url: s, 
+		success: function(result) {
+			// Maybe check for the data here
+			callback(result);
+		},
+		error: function(xhr, ajaxOptions, thrownError) {
+			// This shall not fail!
+			GetVideoData(id, callback);
+		}
+	});
+}
+
+
+//It seems like YouTube API's playlist is always empty.
+var playerPlaylist = []
+
 function onYouTubeIframeAPIReady() {
 	console.debug("Youtube API Ready");
 	
@@ -32,30 +76,14 @@ function onYouTubeIframeAPIReady() {
 	});
 	
 	function onPlayerStateChange(event) {
-		playerStatus = event.data;
-        switch (playerStatus)
-        {
-            case YT.PlayerState.ENDED:
-
-            break;
-            case YT.PlayerState.PLAYING:
-
-            break;
-            case YT.PlayerState.PAUSED:
-
-            break;
-            case YT.PlayerState.BUFFERING:
-
-            break;
-            case YT.PlayerState.CUED:
-
-            break;
-        }
+		//playerStatus = event.data;
+        
+		sendDisplayInfo();
 	}
 	
 	function onPlayerReady(event) {
-		console.debug("Player ready");
-        event.target.playVideo();
+		//console.debug("Player ready");
+        //event.target.playVideo();
     }
 	
 	//Remplacer les '//' htmlencoded par des vrais '//' htmldecoded
@@ -91,6 +119,17 @@ function uploadPlayList() {
         });
 }
 
+function merge(obj1, obj2)
+{
+	var obj3 = {};
+	for (var attrname in obj2) 
+		obj3[attrname] = obj2[attrname];
+	for (var attrname in obj1) 
+		obj3[attrname] = obj1[attrname];
+		
+	return obj3;
+}
+
 function cueSong(url) {
 	var pathAndQuery = url.split('?');
 	if (pathAndQuery.length != 2)
@@ -105,14 +144,19 @@ function cueSong(url) {
 		if (s.length === 2 && key === "v")
 		{			
 			var value = s[1];
-			
+			var i = playerPlaylist.length;
+			playerPlaylist.push({"id": value, "url": url});
+			GetVideoData(value, function(video_data) {
+				var d = video_data['items'];
+				for(var di in video_data['items'])
+					playerPlaylist[i] = merge(playerPlaylist[i], d[di]);
+				sendDisplayInfo();
+			});
 			player.cueVideoById({
 				videoId: value,
 				startSeconds: 0,
 				suggestedQuality: "small"
 				});
-				
-			sendDisplayInfo();
 		}
 	});
 }
@@ -161,21 +205,23 @@ function ConvertPlayerStateToString(playerStatus)
 
 function getVideoIDRelativeToCurrent(offset)
 {
-	var playlist = player.getPlaylist();
+	var playlist = playerPlaylist;//player.getPlaylist();
 	var i = player.getPlaylistIndex() + offset; 
 	
-	if (typeof playlist === 'undefined' || playlist === null || playlist.length <= 0)
-		return {};
+	if (typeof playlist === 'undefined' 
+	|| playlist === null 
+	|| playlist.length <= 0 
+	|| i === NaN
+	|| i > playlist.length - 1
+	|| i < 0)
+		return undefined;
 	
-	if ( i > playlist.length - 1)
-		return {};
-	else
-		return playlist[i];
+	return playlist[i];
 }
 
 function getVideoObject(offset)
 {
-	var obj;
+	var obj = {};
 	obj.id = getVideoIDRelativeToCurrent(offset);
 	
 	if (offset == 0)
@@ -185,22 +231,23 @@ function getVideoObject(offset)
 		obj.url = player.getVideoUrl();
 	}
 	
-	return ((obj.id === {}) ? {} : obj);
+	return ((obj.id === undefined) ? undefined : obj);
 }
 
 function sendDisplayInfo()
 {
+	var d = {};
+	d.state = ConvertPlayerStateToString(player.getPlayerState())
+	d.loop = loops;
+	d.shuffle = shuffled;
+	d.current = getVideoObject(0);
+	d.previous = getVideoObject(-1);
+	d.next = getVideoObject(1);
+	d.playlist = playerPlaylist;
+	
 	chrome.extension.sendMessage({
 		action: "DisplayInfo",
-		data: 
-		{
-			state: ConvertPlayerStateToString(player.getPlayerState()),
-			loop: loops,
-			shuffle: shuffled,
-			current: getVideoObject(0),
-			previous: getVideoObject(-1),
-			next: getVideoObject(1)
-		}
+		data: d
 	}); 
 }
 

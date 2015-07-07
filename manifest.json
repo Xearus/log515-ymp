@@ -1,5 +1,5 @@
 {
-    "name": "LOG515 - YouTube Media Player",
+    "name": "YouTube Media Player",
     "version": "0.0.1",
     "manifest_version": 2,
     "description" : "Manages a play-list of YouTube videos and plays the sound track of them.",
@@ -8,10 +8,13 @@
         "default_popup": "browseraction/popup.html"
     },
     "permissions": [
-          "tabs"
+          "tabs",
+		  "identity",
+		  "http://www.google.com/*",
+		  "https://www.googleapis.com/youtube/v3/videos"
         ],
     "background": {
-        "scripts": ["background.js"],
+        "scripts": ["jquery.min.js", "background.js"],
         "persistent": true
     },
 	"content_security_policy": "script-src 'self' 'unsafe-eval' https://s.ytimg.com https://www.youtube.com; object-src 'self'"
