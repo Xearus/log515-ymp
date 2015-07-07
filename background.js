@@ -173,6 +173,21 @@ function getVideoIDRelativeToCurrent(offset)
 		return playlist[i];
 }
 
+function getVideoObject(offset)
+{
+	var obj;
+	obj.id = getVideoIDRelativeToCurrent(offset);
+	
+	if (offset == 0)
+	{
+		obj.time = player.getCurrentTime();
+		obj.duration = player.getDuration();
+		obj.url = player.getVideoUrl();
+	}
+	
+	return ((obj.id === {}) ? {} : obj);
+}
+
 function sendDisplayInfo()
 {
 	chrome.extension.sendMessage({
@@ -182,18 +197,9 @@ function sendDisplayInfo()
 			state: ConvertPlayerStateToString(player.getPlayerState()),
 			loop: loops,
 			shuffle: shuffled,
-			current: {
-				time: player.getCurrentTime(),
-				duration: player.getDuration(),
-				url: player.getVideoUrl(),
-				id: getVideoIDRelativeToCurrent(0)
-			},
-			previous: {
-				id: getVideoIDRelativeToCurrent(-1)
-			},
-			next: {
-				id: getVideoIDRelativeToCurrent(1)
-			}
+			current: getVideoObject(0),
+			previous: getVideoObject(-1),
+			next: getVideoObject(1)
 		}
 	}); 
 }
