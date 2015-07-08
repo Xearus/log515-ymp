@@ -351,6 +351,9 @@ chrome.extension.onMessage.addListener(function(request, sender, sendResponse) {
 		case "ChangeList": SetNewList(request.data); SendDisplayInfo(); break;
         case "AddUrl": cueSong(request.data); SendDisplayInfo(); break;
 		case "GetInfo": SendDisplayInfo(); break;
+
+		case "Export": sendResponse = playerPlaylist; break;
+		case "Import": ChangeList(request.data); break;
     }
 	
 	return true;

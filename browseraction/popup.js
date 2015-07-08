@@ -23,6 +23,13 @@ function send_to_background(a, d) {
 	chrome.extension.sendMessage(m);
 };
 
+function send_to_background(a, response) {
+	var m = {
+		'action' : a
+	};
+	chrome.extension.sendMessage(m, response);
+};
+
 function CreateHandler(get_action, get_data) {
 	if (get_data !== undefined)
 		return function () {
@@ -55,8 +62,7 @@ window.onload = function () {
 	e('btnStop').onclick = CreateHandler(CreateGetFnct('btnStop', 'title'));
 	e('btnAddUrl').onclick = CreateHandler(function() {return 'AddUrl'}, CreateGetFnct('txtYoutubeUrl', 'value'));
 
-	e('btnLoop').onclick = function ()
-	{
+	e('btnLoop').onclick = function () {
 		//send_to_background(get_action(), get_data());
 		   if (this.checked)  {
 		      this.parentElement.classList.add('active');
