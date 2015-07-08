@@ -338,7 +338,7 @@ chrome.extension.onMessage.addListener(function(request, sender, sendResponse) {
         // these will SendDisplayInfo() upon player state change
 		case "Play": play(); break;
         case "Stop": stop(); break;
-        case "Stop": pause(); break;
+        case "Pause": pause(); break;
         case "Next": next(); break;
         case "Previous": previous(); break;
 		
