@@ -301,6 +301,10 @@ function previous() {
 	stop();
 	if (i >= 0 && i < playerPlaylist.length) {
 		playAt(i);
+	} else if (loops) {
+		playAt(playerPlaylist.length - 1);
+	} else {
+		current = undefined;
 	}
 }
 

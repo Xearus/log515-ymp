@@ -36,12 +36,25 @@ window.onload = function() {
 	e('btnPrevious').onclick = CreateHandler(CreateGetFnct('btnPrevious', 'title'));
 	e('btnPlay').onclick = CreateHandler(CreateGetFnct('btnPlay', 'title'));
 	e('btnStop').onclick = CreateHandler(CreateGetFnct('btnStop', 'title'));
-	e('btnLoop').onclick = CreateHandler(CreateGetFnct('btnLoop', 'title'), CreateGetFnct('btnLoop', 'checked'));
 	e('btnAddUrl').onclick = CreateHandler(function() {return 'AddUrl'}, CreateGetFnct('txtYoutubeUrl', 'value'));
+
+	e('btnLoop').onclick = function ()
+	{
+		//send_to_background(get_action(), get_data());
+		   if (this.checked)  {
+		      this.parentElement.classList.add('active');
+		   }
+		   else {
+		      this.parentElement.classList.remove('active');
+		   }
+		   send_to_background('Loop', this.checked);
+	}
 	
 	// Force an update of the information in the GUI
 	chrome.extension.sendMessage({ action: "GetInfo" });
 }
+
+
 
 function GetSongLabel(song)
 {
