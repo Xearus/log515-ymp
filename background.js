@@ -55,16 +55,15 @@ function guid() {
 
 function GetVideoData(id, callback) {
 	//see https://developers.google.com/youtube/v3/getting-started
-	var parts = "snippet";
-	var fields = "snippet(title)";
-	var parts = ["snippet"];
+	var fields = ["snippet(title,channelTitle)", "contentDetails(duration)"];
+	var parts = ["snippet", "contentDetails"];
 	var api_key = "AIzaSyDRKWm5fN5nDmAzOCFqLvw6b4dmez_1byE";
 	var s = "https://www.googleapis.com/youtube/v3/videos?id={0}&key={1}&fields=items({2})&part={3}";
 	
 	s = s.format(
 		id, 
 		api_key, 
-		fields,
+		fields.join(','),
 		parts.join(','));
 	$.ajax({
 		url: s, 
