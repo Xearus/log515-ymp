@@ -47,36 +47,37 @@ window.onload = function () {
 			send_to_background('AddUrl', url);
 		});
 	}
-
+	
 	e('btnShuffle').onclick = CreateHandler(CreateGetFnct('btnShuffle', 'title'));
 	e('btnNext').onclick = CreateHandler(CreateGetFnct('btnNext', 'title'));
 	e('btnPrevious').onclick = CreateHandler(CreateGetFnct('btnPrevious', 'title'));
 	e('btnPlay').onclick = CreateHandler(CreateGetFnct('btnPlay', 'title'));
 	e('btnStop').onclick = CreateHandler(CreateGetFnct('btnStop', 'title'));
-	e('btnAddUrl').onclick = CreateHandler(function() {return 'AddUrl'}, CreateGetFnct('txtYoutubeUrl', 'value'));
+	e('btnAddUrl').onclick = CreateHandler(function () {
+			return 'AddUrl'
+		}, CreateGetFnct('txtYoutubeUrl', 'value'));
 
-	e('btnLoop').onclick = function ()
-	{
+	e('btnLoop').onclick = function () {
 		//send_to_background(get_action(), get_data());
-		   if (this.checked)  {
-		      this.parentElement.classList.add('active');
-		   }
-		   else {
-		      this.parentElement.classList.remove('active');
-		   }
-		   send_to_background('Loop', this.checked);
+		if (this.checked) {
+			this.parentElement.classList.add('active');
+		} else {
+			this.parentElement.classList.remove('active');
+		}
+		send_to_background('Loop', this.checked);
 	}
-	
+
+	e('btnImport').onclick = function () {
+		importPlaylist();
+	}
+
 	// Force an update of the information in the GUI
 	chrome.extension.sendMessage({
 		action : "GetInfo"
 	});
 }
 
-
-
-function GetSongLabel(song)
-{
+function GetSongLabel(song) {
 	var str = '';
 	if (song !== undefined) {
 		str = song.id;
@@ -138,5 +139,21 @@ chrome.extension.onMessage.addListener(function (request, sender, sendResponse) 
 		break;
 	}
 
-    return true;
+	return true;
 });
+
+function importPlaylist() {
+	var f = e('txtFile').files[0];
+
+	if (f) {
+		var r = new FileReader();
+		r.onload = function (e) {
+			var contents = e.target.result;
+			
+			send_to_background('Import', contents.split(","));
+		}
+		r.readAsText(f);
+	} else {
+		alert("Failed to load file");
+	}
+}
