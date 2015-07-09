@@ -335,23 +335,25 @@ function ChangeList(newList) {
 		stop();
 }
 
-chrome.extension.onMessage.addListener(function(request, sender, sendResponse) {
-    if (sender === this)
-        return false;
-    switch(request.action) {
-        // these will SendDisplayInfo() upon player state change
-		case "Play": play(); break;
-        case "Stop": stop(); break;
-        case "Pause": pause(); break;
-        case "Next": next(); break;
-        case "Previous": previous(); break;
+if(chrome && chrome.extension) {
+	chrome.extension.onMessage.addListener(function(request, sender, sendResponse) {
+		if (sender === this)
+			return false;
+		switch(request.action) {
+			// these will SendDisplayInfo() upon player state change
+			case "Play": play(); break;
+			case "Stop": stop(); break;
+			case "Pause": pause(); break;
+			case "Next": next(); break;
+			case "Previous": previous(); break;
+			
+			case "Loop": setLoop(request.data); SendDisplayInfo(); break;
+			case "Shuffle": shufflePlaylist(); SendDisplayInfo(); break;
+			case "ChangeList": SetNewList(request.data); SendDisplayInfo(); break;
+			case "AddUrl": cueSong(request.data); SendDisplayInfo(); break;
+			case "GetInfo": SendDisplayInfo(); break;
+		}
 		
-        case "Loop": setLoop(request.data); SendDisplayInfo(); break;
-        case "Shuffle": shufflePlaylist(); SendDisplayInfo(); break;
-		case "ChangeList": SetNewList(request.data); SendDisplayInfo(); break;
-        case "AddUrl": cueSong(request.data); SendDisplayInfo(); break;
-		case "GetInfo": SendDisplayInfo(); break;
-    }
-	
-	return true;
-});
+		return true;
+	});
+}
