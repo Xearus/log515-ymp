@@ -23,6 +23,16 @@ function send_to_background(a, d) {
 	chrome.extension.sendMessage(m);
 };
 
+function send_to_background(a, d, response) {
+	var m = {
+		'action' : a
+	};
+	if (d !== undefined) {
+		m.data = d;
+	};
+	chrome.extension.sendMessage(m, response);
+};
+
 function CreateHandler(get_action, get_data) {
 	if (get_data !== undefined)
 		return function () {
@@ -81,14 +91,25 @@ function GetSongLabel(song) {
 	var str = '';
 	if (song !== undefined) {
 		str = song.id;
-		if (song.snippet !== undefined
-			 && song.snippet.title !== undefined) {
-			str = song.snippet.title;
+		
+		if (song.snippet !== undefined )
+		{
+			if (song.snippet.title !== undefined) 
+				str = song.snippet.title;
+
+			if (song.snippet.channelTitle !== undefined) 
+				str += " - " + song.snippet.channelTitle;
 		}
-		str = str + " - " + song.ymp_uuid
-			if (song.error !== undefined) {
-				str = song.error.last.message + " (" + str + ")";
-			}
+
+		if (song.contentDetails !== undefined )
+		{
+			if (song.contentDetails.duration !== undefined) 
+				str += " ("+song.contentDetails.duration+")";
+		}
+		
+		if (song.error !== undefined) {
+			str = song.error.last.message + " (" + str + ")";
+		}
 	}
 	return str;
 }
@@ -100,7 +121,9 @@ function AddAllSongs(playlist, currentSong) {
 		var o = null;
 		if (i < playlist.length) {
 			var song = playlist[i];
+
 			o = new Option(GetSongLabel(song), "");
+
 			if (song === currentSong)
 				o.selected = true;
 		}

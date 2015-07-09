@@ -55,16 +55,15 @@ function guid() {
 
 function GetVideoData(id, callback) {
 	//see https://developers.google.com/youtube/v3/getting-started
-	var parts = "snippet";
-	var fields = "snippet(title)";
-	var parts = ["snippet"];
+	var fields = ["snippet(title,channelTitle)", "contentDetails(duration)"];
+	var parts = ["snippet", "contentDetails"];
 	var api_key = "AIzaSyDRKWm5fN5nDmAzOCFqLvw6b4dmez_1byE";
 	var s = "https://www.googleapis.com/youtube/v3/videos?id={0}&key={1}&fields=items({2})&part={3}";
 	
 	s = s.format(
 		id, 
 		api_key, 
-		fields,
+		fields.join(','),
 		parts.join(','));
 	$.ajax({
 		url: s, 
@@ -339,6 +338,7 @@ if(chrome && chrome.extension) {
 	chrome.extension.onMessage.addListener(function(request, sender, sendResponse) {
 		if (sender === this)
 			return false;
+		
 		switch(request.action) {
 			// these will SendDisplayInfo() upon player state change
 			case "Play": play(); break;
@@ -346,14 +346,15 @@ if(chrome && chrome.extension) {
 			case "Pause": pause(); break;
 			case "Next": next(); break;
 			case "Previous": previous(); break;
-			
 			case "Loop": setLoop(request.data); SendDisplayInfo(); break;
 			case "Shuffle": shufflePlaylist(); SendDisplayInfo(); break;
 			case "ChangeList": SetNewList(request.data); SendDisplayInfo(); break;
 			case "AddUrl": cueSong(request.data); SendDisplayInfo(); break;
 			case "GetInfo": SendDisplayInfo(); break;
+			case "Export": sendResponse = playerPlaylist; break;
+			case "Import": ChangeList(request.data); break;
 		}
-		
-		return true;
-	});
+	
+	return true;
+});
 }
