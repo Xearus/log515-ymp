@@ -338,6 +338,33 @@ function ChangeList(newList) {
 		stop();
 }
 
+function pushSongUp( selectedSong ){
+	 
+	if( selectedSong > 0 ){ //si c'est au moins le second élément de la liste
+		var songTemp = playerPlaylist[selectedSong];
+		
+		playerPlaylist[selectedSong]     = playerPlaylist[selectedSong - 1];
+		playerPlaylist[selectedSong - 1] = songTemp;
+	}	
+}
+
+function pushSongDown( selectedSong ){
+	
+	if( (playerPlaylist.length > 2) && (selectedSong < (playerPlaylist.length - 1)) ){//si ce n'est pas le dernier élément de la liste
+		var songTemp = playerPlaylist[selectedSong];
+		
+		playerPlaylist[selectedSong]     = playerPlaylist[selectedSong + 1];
+		playerPlaylist[selectedSong + 1] = songTemp;
+	}	
+}
+
+function removeSong( selectedSong ){
+
+	if( (selectedSong >= 0) && (selectedSong < playerPlaylist.length) ){//si c'est un élément de la liste qui a été sélectionné
+		playerPlaylist.splice(selectedSong, 1);
+	}	
+}
+
 if(chrome && chrome.extension) {
 	chrome.extension.onMessage.addListener(function(request, sender, sendResponse) {
 		if (sender === this || request.action === undefined)
@@ -359,8 +386,11 @@ if(chrome && chrome.extension) {
 			case "export": sendResponse = playerPlaylist; break;
 			case "import": ChangeList(request.data); break;
 			case "mute": setMute(request.data); break;
+			case "pushup": pushSongUp(request.data); SendDisplayInfo(); break;
+			case "remove": removeSong(request.data); SendDisplayInfo(); break;
+			case "pushdown": pushSongDown(request.data); SendDisplayInfo(); break;
 		}
 	
-	return true;
-});
+		return true;
+	});
 }

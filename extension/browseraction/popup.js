@@ -73,6 +73,24 @@ window.onload = function () {
 	e('btnImport').onclick = function () {
 		importPlaylist();
 	}
+	
+	var select = e('selectMusiques');
+
+	e('btnPushUp').onclick = function(){
+		var selectedIndex = select.options[select.selectedIndex].value;
+		send_to_background('PushUp', selectedIndex);
+	}
+	
+	e('btnRemove').onclick = function(){
+		var selectedIndex = select.options[select.selectedIndex].value;
+		send_to_background('Remove', selectedIndex);
+	}
+	
+	e('btnPushDown').onclick = function(){
+		var selectedIndex = select.options[select.selectedIndex].value;
+		send_to_background('PushDown', selectedIndex);
+	}
+
 
 	// Force an update of the information in the GUI
 	chrome.extension.sendMessage({
