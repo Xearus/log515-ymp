@@ -79,7 +79,7 @@ function AddAllSongs(playlist, currentSong) {
 		if (i < playlist.length) {
 			var song = playlist[i];
 
-			o = new Option(GetSongLabel(song), "");
+			o = new Option(GetSongLabel(song), i);// AJOUT/MODIF RIWAN -----********
 
 			if (song === currentSong)
 				o.selected = true;
@@ -126,6 +126,26 @@ window.onload = function () {
 	e('btnImport').onclick = function () {
 		importPlaylist();
 	}
+
+	// AJOUT/MODIF RIWAN ---------------------------------------------
+	var select = e('selectMusiques');
+
+	e('btnPushUp').onclick = function(){
+		var selectedIndex = select.options[select.selectedIndex].value;
+		send_to_background('PushUp', selectedIndex);
+	}
+	
+	e('btnRemove').onclick = function(){
+		var selectedIndex = select.options[select.selectedIndex].value;
+		send_to_background('Remove', selectedIndex);
+	}
+	
+	e('btnPushDown').onclick = function(){
+		var selectedIndex = select.options[select.selectedIndex].value;
+		send_to_background('PushDown', selectedIndex);
+	}
+
+	// FIN AJOUT/MODIF RIWAN ---------------------------------------------
 
 	// Force an update of the information in the GUI
 	chrome.extension.sendMessage({

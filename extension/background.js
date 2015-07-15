@@ -314,6 +314,35 @@ function downloadPlayList() {
     songList = player.getPlaylist();
 }
 
+// AJOUT/MODIF RIWAN ---------------------------------------------
+function pushSongUp( selectedSong ){
+	 
+	if( selectedSong > 0 ){ //si c'est au moins le second élément de la liste
+		var songTemp = playerPlaylist[selectedSong];
+		
+		playerPlaylist[selectedSong]     = playerPlaylist[selectedSong - 1];
+		playerPlaylist[selectedSong - 1] = songTemp;
+	}	
+}
+
+function pushSongDown( selectedSong ){
+	
+	if( (playerPlaylist.length > 2) && (selectedSong < (playerPlaylist.length - 1)) ){//si ce n'est pas le dernier élément de la liste
+		var songTemp = playerPlaylist[selectedSong];
+		
+		playerPlaylist[selectedSong]     = playerPlaylist[selectedSong + 1];
+		playerPlaylist[selectedSong + 1] = songTemp;
+	}	
+}
+
+function removeSong( selectedSong ){
+
+	if( (selectedSong >= 0) && (selectedSong < playerPlaylist.length) ){//si c'est un élément de la liste qui a été sélectionné
+		playerPlaylist.splice(selectedSong, 1);
+	}	
+}
+// FIN AJOUT/MODIF RIWAN ---------------------------------------------
+
 // NOT TESTED YET
 function ChangeList(newList) {
 	var correctList = [];
@@ -353,6 +382,12 @@ if(chrome && chrome.extension) {
 			case "GetInfo": SendDisplayInfo(); break;
 			case "Export": sendResponse = playerPlaylist; break;
 			case "Import": ChangeList(request.data); break;
+			
+			//AJOUT/MODIF RIWAN ---------------------------------------------
+			case "PushUp": pushSongUp(request.data); SendDisplayInfo(); break;
+			case "Remove": removeSong(request.data); SendDisplayInfo(); break;
+			case "PushDown": pushSongDown(request.data); SendDisplayInfo(); break;
+			//FIN AJOUT/MODIF RIWAN ---------------------------------------------
 		}
 	
 	return true;
