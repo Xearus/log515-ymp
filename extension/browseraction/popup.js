@@ -67,15 +67,8 @@ window.onload = function () {
 			return 'AddUrl'
 		}, CreateGetFnct('txtYoutubeUrl', 'value'));
 
-	e('btnLoop').onclick = function () {
-		//send_to_background(get_action(), get_data());
-		if (this.checked) {
-			this.parentElement.classList.add('active');
-		} else {
-			this.parentElement.classList.remove('active');
-		}
-		send_to_background('Loop', this.checked);
-	}
+	e('btnLoop').onclick = CreateHandler(CreateGetFnct('btnLoop', 'title'), CreateGetFnct('btnLoop', 'checked'));
+	e('btnMute').onclick = CreateHandler(CreateGetFnct('btnMute', 'title'), CreateGetFnct('btnMute', 'checked'));
 
 	e('btnImport').onclick = function () {
 		importPlaylist();
@@ -137,16 +130,20 @@ chrome.extension.onMessage.addListener(function (request, sender, sendResponse) 
 
 	switch (request.action) {
 	case "DisplayInfo":
-		// TODO (Doesn't work): Manage button displayed.
-		if (request.data.state === "playing") {
-			e("btnPlay").getElementsByTagName("span")[0].className = "glyphicon glyphicon-pause";
-			e("btnPlay").title = "Pause";
-		} else if (request.data.state === "paused" || request.data.state === "stopped") {
-			e("btnPlay").getElementsByTagName("span")[0].className = "glyphicon glyphicon-play";
-			e("btnPlay").title = "Play";
-		}
+		// Manage play/pause button
+		var playString = (request.data.state === "playing") ? "Pause" : "Play";
+		e("btnPlay").title = playString;
+		e("btnPlay").getElementsByTagName("span")[0].className = "glyphicon glyphicon-" + playString.toLowerCase();
+		
+		// Manage loop and mute 
+		var setActive = function (element, active) { var c = element.parentElement.classList; if (active) c.add('active'); else c.remove('active'); }
+		setActive(e("btnLoop"), request.data.loop);
+		setActive(e("btnMute"), request.data.mute);
 
+		// Manage song list
 		AddAllSongs(request.data.playlist, request.data.current);
+		
+		// Manage status and current song
 		var status = request.data.state;
 		if (request.data.current !== undefined) {
 			status = status + ". Current song: " + GetSongLabel(request.data.current);

@@ -27,6 +27,7 @@ var current = undefined;
 var stopRequested = false;
 
 var ymp_state = "not playing";
+var isMuted = false;
 
 Array.prototype.first = function (predicate) {
     for (var i = 0; i < this.length; i++) {
@@ -105,6 +106,7 @@ function onPlayerStateChange(event) {
 }
 
 function onPlayerReady(event) {
+	isMuted = player.isMuted();
 	//console.debug("Player ready");
 	//event.target.playVideo(); 
 }
@@ -257,7 +259,8 @@ function SendDisplayInfo() {
 		'current': current,
 		'previous': GetVideoObject(-1),
 		'next': GetVideoObject(1),
-		'playlist': playerPlaylist
+		'playlist': playerPlaylist,
+		'mute': isMuted
 	};
 
 	chrome.extension.sendMessage({ action: "DisplayInfo", data: d }); 
@@ -309,6 +312,7 @@ function previous() {
 
 function shufflePlaylist() { playerPlaylist = shuffle(playerPlaylist); shuffled = true; }
 function setLoop(on) { loops = on; }
+function setMute(on) { isMuted = on; on ? player.mute() : player.unMute(); SendDisplayInfo(); }
 
 function downloadPlayList() {
     songList = player.getPlaylist();
@@ -336,23 +340,25 @@ function ChangeList(newList) {
 
 if(chrome && chrome.extension) {
 	chrome.extension.onMessage.addListener(function(request, sender, sendResponse) {
-		if (sender === this)
+		if (sender === this || request.action === undefined)
 			return false;
 		
-		switch(request.action) {
+		var action = ("" + request.action).toLowerCase();
+		switch(action) {
 			// these will SendDisplayInfo() upon player state change
-			case "Play": play(); break;
-			case "Stop": stop(); break;
-			case "Pause": pause(); break;
-			case "Next": next(); break;
-			case "Previous": previous(); break;
-			case "Loop": setLoop(request.data); SendDisplayInfo(); break;
-			case "Shuffle": shufflePlaylist(); SendDisplayInfo(); break;
-			case "ChangeList": SetNewList(request.data); SendDisplayInfo(); break;
-			case "AddUrl": cueSong(request.data); SendDisplayInfo(); break;
-			case "GetInfo": SendDisplayInfo(); break;
-			case "Export": sendResponse = playerPlaylist; break;
-			case "Import": ChangeList(request.data); break;
+			case "play": play(); break;
+			case "stop": stop(); break;
+			case "pause": pause(); break;
+			case "next": next(); break;
+			case "previous": previous(); break;
+			case "loop": setLoop(request.data); SendDisplayInfo(); break;
+			case "shuffle": shufflePlaylist(); SendDisplayInfo(); break;
+			case "changelist": SetNewList(request.data); SendDisplayInfo(); break;
+			case "addurl": cueSong(request.data); SendDisplayInfo(); break;
+			case "getinfo": SendDisplayInfo(); break;
+			case "export": sendResponse = playerPlaylist; break;
+			case "import": ChangeList(request.data); break;
+			case "mute": setMute(request.data); break;
 		}
 	
 	return true;
