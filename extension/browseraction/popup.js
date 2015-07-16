@@ -70,10 +70,6 @@ window.onload = function () {
 	e('btnLoop').onclick = CreateHandler(CreateGetFnct('btnLoop', 'title'), CreateGetFnct('btnLoop', 'checked'));
 	e('btnMute').onclick = CreateHandler(CreateGetFnct('btnMute', 'title'), CreateGetFnct('btnMute', 'checked'));
 
-	e('btnImport').onclick = function () {
-		importPlaylist();
-	}
-	
 	var select = e('selectMusiques');
 
 	e('btnPushUp').onclick = function(){
@@ -166,7 +162,7 @@ chrome.extension.onMessage.addListener(function (request, sender, sendResponse) 
 		if (request.data.current !== undefined) {
 			status = status + ". Current song: " + GetSongLabel(request.data.current);
 		}
-		e('txtYoutubeUrl').value = status;
+		e('lblInfo').innerHTML = status;
 		break;
 	case "ChangeSongPlaying":
 		break;
@@ -179,19 +175,3 @@ chrome.extension.onMessage.addListener(function (request, sender, sendResponse) 
 
 	return true;
 });
-
-function importPlaylist() {
-	var f = e('txtFile').files[0];
-
-	if (f) {
-		var r = new FileReader();
-		r.onload = function (e) {
-			var contents = e.target.result;
-			
-			send_to_background('Import', contents.split(","));
-		}
-		r.readAsText(f);
-	} else {
-		alert("Failed to load file");
-	}
-}

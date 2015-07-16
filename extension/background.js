@@ -54,11 +54,12 @@ function guid() {
     s4() + '-' + s4() + s4() + s4();
 }
 
+var api_key = "AIzaSyDRKWm5fN5nDmAzOCFqLvw6b4dmez_1byE";
+	
 function GetVideoData(id, callback) {
 	//see https://developers.google.com/youtube/v3/getting-started
 	var fields = ["snippet(title,channelTitle)", "contentDetails(duration)"];
 	var parts = ["snippet", "contentDetails"];
-	var api_key = "AIzaSyDRKWm5fN5nDmAzOCFqLvw6b4dmez_1byE";
 	var s = "https://www.googleapis.com/youtube/v3/videos?id={0}&key={1}&fields=items({2})&part={3}";
 	
 	s = s.format(
@@ -171,14 +172,23 @@ function onYouTubeIframeAPIReady() {
 	document.getElementById('player').setAttribute('src', url);
 }
 
-function uploadPlayList() {
-    player.loadPlaylist({
-        list: songList,
-        index: "",
-        startSeconds: 0,
-        suggestedQuality: "small"
+function getPlayListVideosInfo(playListUrl) {
+	var pathAndQuery = playListUrl.split('=');
+	if (pathAndQuery.length != 2)
+		return;
+		
+	$.get("https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=50&playlistId=" + pathAndQuery[1] + "&key=" + api_key,
+	null,
+	function(data) {
+		for(var i = 0; i < data.items.length; i++) {
+			if(data.items[i].snippet.title == 'Deleted video')
+				continue;
+			
+			playerPlaylist.push(new Song(data.items[i].snippet.resourceId.videoId, playListUrl, SendDisplayInfo));
+		}
 	});
 }
+
 function copyin(to, from) { for (var attrname in from) { to[attrname] = from[attrname]; } };
 function merge() { var to = {}; arguments.forEach(function(from) { copyin(to, from); }); return to; }
 
@@ -201,6 +211,10 @@ function Song(id, url, callback) {
 }
 
 function cueSong(url) {
+	if(url.includes('playlist')) {
+		getPlayListVideosInfo(url);
+	}
+	
 	var pathAndQuery = url.split('?');
 	if (pathAndQuery.length != 2)
 		return;
@@ -314,30 +328,6 @@ function shufflePlaylist() { playerPlaylist = shuffle(playerPlaylist); shuffled 
 function setLoop(on) { loops = on; }
 function setMute(on) { isMuted = on; on ? player.mute() : player.unMute(); SendDisplayInfo(); }
 
-function downloadPlayList() {
-    songList = player.getPlaylist();
-}
-
-// NOT TESTED YET
-function ChangeList(newList) {
-	var correctList = [];
-	
-	newList.forEach(function(song_newlist) {
-		var equivalent = playerPlaylist.find(function(s) {
-			return (song_newlist.ymp_uuid !== undefined && song_newlist.ymp_uuid === song_oldlist.ymp_uuid);
-		});
-		if (equivalent != undefined) {
-			correctList.push(equivalent);
-		} else {
-			correctList.push(new Song(song_newlist.id, song_newlist.url, SendDisplayInfo));
-		}
-	});
-	
-	playerPlaylist = correctList;
-	if (!playerPlaylist.contains(current))
-		stop();
-}
-
 function pushSongUp( selectedSong ){
 	 
 	if( selectedSong > 0 ){ //si c'est au moins le second élément de la liste
@@ -383,8 +373,6 @@ if(chrome && chrome.extension) {
 			case "changelist": SetNewList(request.data); SendDisplayInfo(); break;
 			case "addurl": cueSong(request.data); SendDisplayInfo(); break;
 			case "getinfo": SendDisplayInfo(); break;
-			case "export": sendResponse = playerPlaylist; break;
-			case "import": ChangeList(request.data); break;
 			case "mute": setMute(request.data); break;
 			case "pushup": pushSongUp(request.data); SendDisplayInfo(); break;
 			case "remove": removeSong(request.data); SendDisplayInfo(); break;
