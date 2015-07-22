@@ -8,14 +8,38 @@
     <title>Youtube Music Player</title>
 
     <link href="css/bootstrap.min.css" rel="stylesheet">
+	<style>
+		#playlist ul {height:200px;}
+		#playlist ul{overflow:hidden; overflow-y:scroll;}
+		#playlist ul li {
+			display: inline-block;
+			width: 100%;
+		}
+		#playlist ul li span {
+			display: inline-block;
+			width: 100%;
+		}
+		#playlist ul .selected {
+			background-color: rgba(0,0,255,0.3);
+		}
+		#playlist ul li:hover {
+			background-color: rgba(0,0,255,0.1);
+		}
+		#playlist ul li i {
+			width: 20px;
+		}
+	</style>
   </head>
   
     <body>
 		<div class="container">
 			<div class="row" style="min-width:600px">
 				<div class="col-xs-10" style="margin-top:15px; max-width:500px;z-index:999">
-					<select name="Musiques" id="selectMusiques" class="form-control" size="5">
-					</select>
+					<div id="playlist">
+						<ul id="playlist-ul">
+						
+						</ul>
+					</div>
 				</div>
 				
 				<div class="col-xs-2" style="margin-top:20px;">

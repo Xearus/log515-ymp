@@ -5,7 +5,8 @@
     "description" : "Manages a play-list of YouTube videos and plays the sound track of them.",
     "browser_action": {
         "default_title": "That's the tool tip",
-        "default_popup": "browseraction/popup.html"
+        "default_popup": "browseraction/popup.html",
+		"scripts": ["jquery.min.js"]
     },
     "permissions": [
           "tabs",

@@ -25,10 +25,12 @@ var loops = false;
 var playerPlaylist = [] // The actual playlist of the "player"
 var current = undefined;
 var stopRequested = false;
+var selectedSong = undefined;
 
 var ymp_state = "not playing";
 var isMuted = false;
 
+// Returns the first element compliant to the predicate.
 Array.prototype.first = function (predicate) {
     for (var i = 0; i < this.length; i++) {
         if (predicate(this[i])) {
@@ -38,12 +40,14 @@ Array.prototype.first = function (predicate) {
 	return undefined;
 }
 
+// Shuffles a list
 // http://stackoverflow.com/questions/6274339/how-can-i-shuffle-an-array-in-javascript
 function shuffle(o){
     for(var j, x, i = o.length; i; j = Math.floor(Math.random() * i), x = o[--i], o[i] = o[j], o[j] = x);
     return o;
 }
 
+// Returns a new GUID generated.
 function guid() {
   function s4() {
     return Math.floor((1 + Math.random()) * 0x10000)
@@ -55,27 +59,38 @@ function guid() {
 }
 
 var api_key = "AIzaSyDRKWm5fN5nDmAzOCFqLvw6b4dmez_1byE";
-	
-function GetVideoData(id, callback) {
+
+// Gets the video data of a song.
+function GetVideoData(id, callback, nfail) {
 	//see https://developers.google.com/youtube/v3/getting-started
 	var fields = ["snippet(title,channelTitle)", "contentDetails(duration)"];
 	var parts = ["snippet", "contentDetails"];
 	var s = "https://www.googleapis.com/youtube/v3/videos?id={0}&key={1}&fields=items({2})&part={3}";
+	
+	if (arguments.length == 2)
+		nfail = 0;
 	
 	s = s.format(
 		id, 
 		api_key, 
 		fields.join(','),
 		parts.join(','));
+		
 	$.ajax({
 		url: s, 
 		success: function(result) {
-			// Maybe check for the data here
 			callback(result);
 		},
 		error: function(xhr, ajaxOptions, thrownError) {
-			// This shall not fail!
-			GetVideoData(id, callback);
+			
+			if (nfail < 5) {
+				// This shall not fail!
+				GetVideoData(id, callback, nfail + 1);
+			} else {
+				// The information couldn't be loaded.
+				// There might be a connection issue.
+				// Anyway, this is out of scope for this project.
+			}
 		}
 	});
 }
@@ -153,6 +168,7 @@ function onPlayerError(event) {
 	next();
 }
 
+// Call upon YouTube Player is completely loaded.
 function onYouTubeIframeAPIReady() {
 	console.debug("Youtube API Ready");
 	
@@ -172,6 +188,7 @@ function onYouTubeIframeAPIReady() {
 	document.getElementById('player').setAttribute('src', url);
 }
 
+// Queries YouTube Data API to get the playlist info.
 function getPlayListVideosInfo(playListUrl) {
 	var pathAndQuery = playListUrl.split('=');
 	if (pathAndQuery.length != 2)
@@ -189,9 +206,12 @@ function getPlayListVideosInfo(playListUrl) {
 	});
 }
 
+// Copy all the attributes from one object to another.
 function copyin(to, from) { for (var attrname in from) { to[attrname] = from[attrname]; } };
+// Copy all the attributes from two objects to a new one.
 function merge() { var to = {}; arguments.forEach(function(from) { copyin(to, from); }); return to; }
 
+// Create a song object.
 function Song(id, url, callback) {
 	this.id = id;
 	this.url = url;
@@ -210,6 +230,7 @@ function Song(id, url, callback) {
 	});
 }
 
+// Put a song at the end of the queue based on a youtube url
 function cueSong(url) {
 	if(url.includes('playlist')) {
 		getPlayListVideosInfo(url);
@@ -232,17 +253,7 @@ function cueSong(url) {
 	});
 }
 
-function ConvertPlayerStateToString(s) {
-	switch (s) {
-		case -1: return "unstarted";
-		case YT.PlayerState.ENDED: return "ended";
-		case YT.PlayerState.PLAYING: return "playing";
-		case YT.PlayerState.PAUSED: return "paused";
-		case YT.PlayerState.BUFFERING: return "buffering";
-		case YT.PlayerState.CUED: return "cued";
-	}
-}
-
+// Send the information to display to the GUI
 function SendDisplayInfo() {
 	var GetVideoObject = function(offset) {
 		if (current === undefined)
@@ -274,17 +285,20 @@ function SendDisplayInfo() {
 		'previous': GetVideoObject(-1),
 		'next': GetVideoObject(1),
 		'playlist': playerPlaylist,
-		'mute': isMuted
+		'mute': isMuted,
+		'selected': selectedSong
 	};
 
 	chrome.extension.sendMessage({ action: "DisplayInfo", data: d }); 
 }
 
+// Start the player at a specified index.
 function playAt(i) {
 	current = playerPlaylist[i];
 	player.cueVideoById({ videoId: current.id, startSeconds: 0, suggestedQuality: "small" });
 }
 
+// Starts the player (index == 0 in the list)
 function play() { 
 	if(playerStatus === YT.PlayerState.PAUSED || playerStatus === YT.PlayerState.CUED) {
 		player.playVideo();
@@ -292,14 +306,18 @@ function play() {
 		playAt(0);
 	}
 }
+
+// Stops the current song
 function stop() { 
 	player.stopVideo(); 
 	ymp_state = "stopped";
 	SendDisplayInfo();
 }
-function pause() { 
-	player.pauseVideo(); 
-}
+
+// Pauses the song currently playing (Player feature)
+function pause() { player.pauseVideo(); }
+
+// Moves the player to the next song in the list.
 function next() { 
 	var i = (current !== undefined)? playerPlaylist.indexOf(current) + 1 : 0;
 	stop();
@@ -312,6 +330,7 @@ function next() {
 	}
 }
 
+// Moves the player to the previous song in teh list.
 function previous() { 
 	var i = (current !== undefined)? playerPlaylist.indexOf(current) - 1 : 0;
 	stop();
@@ -324,46 +343,67 @@ function previous() {
 	}
 }
 
+// Shuffle the playlist once.
 function shufflePlaylist() { playerPlaylist = shuffle(playerPlaylist); shuffled = true; }
+
+// Turns on/off the loop feature. (after the last element, the first will play)
 function setLoop(on) { loops = on; }
+
+// Turns on/off mute in the player.
 function setMute(on) { isMuted = on; on ? player.mute() : player.unMute(); SendDisplayInfo(); }
 
-function pushSongUp( selectedSong ){
+// Pushes up a song in the list. (songIndex must be an integer.)
+function pushSongUp(songIndex){
 	
-	selectedSong = parseInt(selectedSong);
+	songIndex = parseInt(songIndex);
 	
-	if( selectedSong > 0 ){ //si c'est au moins le second élément de la liste
-		var songTemp = playerPlaylist[selectedSong];
+	// validates input with playlist borders.
+	if( songIndex > 0 ){ 
+		var songTemp = playerPlaylist[songIndex];
 		
-		playerPlaylist[selectedSong]     = playerPlaylist[selectedSong - 1];
-		playerPlaylist[selectedSong - 1] = songTemp;
+		playerPlaylist[songIndex]     = playerPlaylist[songIndex - 1];
+		playerPlaylist[songIndex - 1] = songTemp;
 	}	
 }
 
-function pushSongDown( selectedSong ){
+// Pushes down a song in the list. (songIndex must be an integer.)
+function pushSongDown(songIndex){
 	
-	selectedSong = parseInt(selectedSong);
+	songIndex = parseInt(songIndex);
 	
-	if( (playerPlaylist.length >= 2) && (selectedSong < (playerPlaylist.length - 1)) ){//si ce n'est pas le dernier élément de la liste
+	// validates input with playlist borders.
+	if( (playerPlaylist.length >= 2) && (songIndex < (playerPlaylist.length - 1)) ){
 
-		var songTemp = playerPlaylist[selectedSong + 1];
+		var songTemp = playerPlaylist[songIndex + 1];
 
-		playerPlaylist[selectedSong + 1] = playerPlaylist[ selectedSong ];
-		playerPlaylist[ selectedSong ] = songTemp;
+		playerPlaylist[songIndex + 1] = playerPlaylist[songIndex];
+		playerPlaylist[songIndex] = songTemp;
 
 	}	
 }
 
-function removeSong( selectedSong ){
+// Removes a single song from the list. (songIndex must be an integer.)
+function removeSong(songIndex){
 
-	selectedSong = parseInt(selectedSong);
-
-	if( (selectedSong >= 0) && (selectedSong < playerPlaylist.length) ){//si c'est un élément de la liste qui a été sélectionné
-		playerPlaylist.splice(selectedSong, 1);
+	songIndex = parseInt(songIndex);
+	
+	// validate input with playlist borders.
+	if( (songIndex >= 0) && (songIndex < playerPlaylist.length) ){
+		song = playerPlaylist[songIndex];
+		
+		// Change the song if we are removing the current one.
+		if(ymp_state === "playing"
+		&& current !== undefined 
+		&& current.ymp_uuid === song.ymp_uuid) {
+			next();
+		}
+		
+		playerPlaylist.splice(songIndex, 1);
 	}	
 }
 
 if(chrome && chrome.extension) {
+	// Listen for front end commands.
 	chrome.extension.onMessage.addListener(function(request, sender, sendResponse) {
 		if (sender === this || request.action === undefined)
 			return false;
@@ -385,6 +425,7 @@ if(chrome && chrome.extension) {
 			case "pushup": pushSongUp(request.data); SendDisplayInfo(); break;
 			case "remove": removeSong(request.data); SendDisplayInfo(); break;
 			case "pushdown": pushSongDown(request.data); SendDisplayInfo(); break;
+			case "select": selectedSong = request.data; SendDisplayInfo(); break;
 		}
 	
 		return true;

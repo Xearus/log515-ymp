@@ -1,12 +1,3 @@
-
-var e;
-
-function CreateGetElementByID() {
-	return function (id) {
-		return document.getElementById(id);
-	};
-}
-
 function CreateGetFnct(control, attr) {
 	return function () {
 		return document.getElementById(control)[attr];
@@ -45,48 +36,44 @@ function CreateHandler(get_action, get_data) {
 }
 
 window.onload = function () {
-	e = CreateGetElementByID();
-
-	e("btnAddCurrentUrl").onclick = function () {
+	document.getElementById("btnAddCurrentUrl").onclick = function () {
 		chrome.tabs.query({
 			'active' : true,
 			'lastFocusedWindow' : true
 		}, function (tabs) {
+			if (tabs.length === 0) {
+				return;
+			}
 			var url = tabs[0].url;
-			e("txtYoutubeUrl").value = url;
+			$("#txtYoutubeUrl").value = url;
 			send_to_background('AddUrl', url);
 		});
-	}
+	};
 	
-	e('btnShuffle').onclick = CreateHandler(CreateGetFnct('btnShuffle', 'title'));
-	e('btnNext').onclick = CreateHandler(CreateGetFnct('btnNext', 'title'));
-	e('btnPrevious').onclick = CreateHandler(CreateGetFnct('btnPrevious', 'title'));
-	e('btnPlay').onclick = CreateHandler(CreateGetFnct('btnPlay', 'title'));
-	e('btnStop').onclick = CreateHandler(CreateGetFnct('btnStop', 'title'));
-	e('btnAddUrl').onclick = CreateHandler(function () {
-			return 'AddUrl'
-		}, CreateGetFnct('txtYoutubeUrl', 'value'));
+	$('#btnShuffle').click(CreateHandler(CreateGetFnct('btnShuffle', 'title')));
+	$('#btnNext').click(CreateHandler(CreateGetFnct('btnNext', 'title')));
+	$('#btnPrevious').click(CreateHandler(CreateGetFnct('btnPrevious', 'title')));
+	$('#btnPlay').click(CreateHandler(CreateGetFnct('btnPlay', 'title')));
+	$('#btnStop').click(CreateHandler(CreateGetFnct('btnStop', 'title')));
+	$('#btnAddUrl').click(CreateHandler(function () { return 'AddUrl' }, 
+							CreateGetFnct('txtYoutubeUrl', 'value'))
+	);
 
-	e('btnLoop').onclick = CreateHandler(CreateGetFnct('btnLoop', 'title'), CreateGetFnct('btnLoop', 'checked'));
-	e('btnMute').onclick = CreateHandler(CreateGetFnct('btnMute', 'title'), CreateGetFnct('btnMute', 'checked'));
+	$('#btnLoop').click(CreateHandler(CreateGetFnct('btnLoop', 'title'), CreateGetFnct('btnLoop', 'checked')));
+	$('#btnMute').click(CreateHandler(CreateGetFnct('btnMute', 'title'), CreateGetFnct('btnMute', 'checked')));
 
-	var select = e('selectMusiques');
 
-	e('btnPushUp').onclick = function(){
-		var selectedIndex = select.options[select.selectedIndex].value;
-		send_to_background('PushUp', selectedIndex);
-	}
+	$('#btnPushUp').click(function(){
+		send_to_background('PushUp', $('#playlist-ul>.selected').attr('index'));
+	});
 	
-	e('btnRemove').onclick = function(){
-		var selectedIndex = select.options[select.selectedIndex].value;
-		send_to_background('Remove', selectedIndex);
-	}
+	$('#btnRemove').click(function(){
+		send_to_background('Remove', $('#playlist-ul>.selected').attr('index'));
+	});
 	
-	e('btnPushDown').onclick = function(){
-		var selectedIndex = select.options[select.selectedIndex].value;
-		send_to_background('PushDown', selectedIndex);
-	}
-
+	$('#btnPushDown').click(function(){
+		send_to_background('PushDown', $('#playlist-ul>.selected').attr('index'));
+	});
 
 	// Force an update of the information in the GUI
 	chrome.extension.sendMessage({
@@ -113,56 +100,103 @@ function GetSongLabel(song) {
 			if (song.contentDetails.duration !== undefined) 
 				str += " ("+song.contentDetails.duration+")";
 		}
-		
-		if (song.error !== undefined) {
-			str = song.error.last.message + " (" + str + ")";
-		}
 	}
 	return str;
 }
 
-function AddAllSongs(playlist, currentSong) {
-	var select = e('selectMusiques');
-	var length = Math.max(select.options.length, playlist.length);
-	for (i = 0; i < length; i++) {
-		var o = null;
-		if (i < playlist.length) {
-			var song = playlist[i];
+function OnClickSelectSong() {
+	if ($(this).hasClass('selected')) {
+		send_to_background('select', undefined);
+	} else {
+		send_to_background('select', $(this).attr('id'));
+	}
+}
 
-			o = new Option(GetSongLabel(song), i);
+function GetSongIcon(song, currentSong) {
+	var s = '<i class="glyphicon ';
+	if (currentSong !== undefined
+	&&  song.ymp_uuid === currentSong.ymp_uuid) {
+		s += "glyphicon-headphones";
+	} else if (song.error !== undefined) {
+		s += "glyphicon-warning-sign";
+	}
+	
+	return s + '"></i>';
+}
 
-			if (song === currentSong)
-				o.selected = true;
+function GetListItemInnerHTML(song, currentSong) {
+	var icon = GetSongIcon(song, currentSong);
+	var lbl = GetSongLabel(song);
+	return icon + lbl;
+}
+
+function zip(a, b) {
+	var longest = a.length > b.length ? a : b
+	var sortest = a.length <= b.length ? a : b
+	var ret = [];
+	for(var i = 0; i < longest.length; i++) {
+		ret[i] = [a[i], b[i]];
+	}
+	return ret;
+}
+
+function AddAllSongs(playlist, currentSong, selectedID) {
+	var pl_ul = $('#playlist-ul');
+
+	var e;
+	var z = zip(playlist, $('#playlist-ul>li'))
+	
+	for(var i = 0; i < z.length; i++) {
+		e = z[i];
+		var song = e[0];
+		var li = $(e[1]);
+		
+		if(e[1] === undefined) {
+			li = $('<li/>');
+			li.click(OnClickSelectSong);
+			li.appendTo(pl_ul);
 		}
-		select.options[i] = o;
+		
+		if (song === undefined) {
+			li.unbind('click', OnClickSelectSong);
+			li.remove();
+		} else {
+			var li_inner = GetListItemInnerHTML(song, currentSong);
+			li.attr('index', i).attr('id', song.ymp_uuid).html(li_inner);
+			if (song.ymp_uuid === selectedID) {
+				li.addClass('selected');
+			} else {
+				li.removeClass('selected');
+			}
+		}
 	}
 }
 
 chrome.extension.onMessage.addListener(function (request, sender, sendResponse) {
-	if (sender === this || e === undefined)
+	if (sender === this)
 		return false;
 
 	switch (request.action) {
 	case "DisplayInfo":
 		// Manage play/pause button
 		var playString = (request.data.state === "playing") ? "Pause" : "Play";
-		e("btnPlay").title = playString;
-		e("btnPlay").getElementsByTagName("span")[0].className = "glyphicon glyphicon-" + playString.toLowerCase();
+		$("#btnPlay").attr('title', playString);
+		$("#btnPlay>span")[0].className = "glyphicon glyphicon-" + playString.toLowerCase();
 		
 		// Manage loop and mute 
-		var setActive = function (element, active) { var c = element.parentElement.classList; if (active) c.add('active'); else c.remove('active'); }
-		setActive(e("btnLoop"), request.data.loop);
-		setActive(e("btnMute"), request.data.mute);
+		var setActive = function (e, active) { if (active) e.addClass('active'); else e.removeClass('active'); }
+		setActive($("#btnLoop"), request.data.loop);
+		setActive($("#btnMute"), request.data.mute);
 
 		// Manage song list
-		AddAllSongs(request.data.playlist, request.data.current);
+		AddAllSongs(request.data.playlist, request.data.current, request.data.selected);
 		
 		// Manage status and current song
 		var status = request.data.state;
 		if (request.data.current !== undefined) {
-			status = status + ". Current song: " + GetSongLabel(request.data.current);
+			status = status + ". " + GetSongLabel(request.data.current);
 		}
-		e('lblInfo').innerHTML = status;
+		$('#lblInfo').html(status);
 		break;
 	case "ChangeSongPlaying":
 		break;
