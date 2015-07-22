@@ -129,7 +129,7 @@ function AddAllSongs(playlist, currentSong) {
 		if (i < playlist.length) {
 			var song = playlist[i];
 
-			o = new Option(GetSongLabel(song), "");
+			o = new Option(GetSongLabel(song), i);
 
 			if (song === currentSong)
 				o.selected = true;

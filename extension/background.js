@@ -329,7 +329,9 @@ function setLoop(on) { loops = on; }
 function setMute(on) { isMuted = on; on ? player.mute() : player.unMute(); SendDisplayInfo(); }
 
 function pushSongUp( selectedSong ){
-	 
+	
+	selectedSong = parseInt(selectedSong);
+	
 	if( selectedSong > 0 ){ //si c'est au moins le second élément de la liste
 		var songTemp = playerPlaylist[selectedSong];
 		
@@ -340,15 +342,21 @@ function pushSongUp( selectedSong ){
 
 function pushSongDown( selectedSong ){
 	
-	if( (playerPlaylist.length > 2) && (selectedSong < (playerPlaylist.length - 1)) ){//si ce n'est pas le dernier élément de la liste
-		var songTemp = playerPlaylist[selectedSong];
-		
-		playerPlaylist[selectedSong]     = playerPlaylist[selectedSong + 1];
-		playerPlaylist[selectedSong + 1] = songTemp;
+	selectedSong = parseInt(selectedSong);
+	
+	if( (playerPlaylist.length >= 2) && (selectedSong < (playerPlaylist.length - 1)) ){//si ce n'est pas le dernier élément de la liste
+
+		var songTemp = playerPlaylist[selectedSong + 1];
+
+		playerPlaylist[selectedSong + 1] = playerPlaylist[ selectedSong ];
+		playerPlaylist[ selectedSong ] = songTemp;
+
 	}	
 }
 
 function removeSong( selectedSong ){
+
+	selectedSong = parseInt(selectedSong);
 
 	if( (selectedSong >= 0) && (selectedSong < playerPlaylist.length) ){//si c'est un élément de la liste qui a été sélectionné
 		playerPlaylist.splice(selectedSong, 1);
