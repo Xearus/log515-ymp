@@ -34,7 +34,7 @@ function CreateHandler(get_action, get_data) {
 			send_to_background(get_action());
 		};
 }
-
+if(QUnit === undefined){
 window.onload = function () {
 	document.getElementById("btnAddCurrentUrl").onclick = function () {
 		chrome.tabs.query({
@@ -79,6 +79,7 @@ window.onload = function () {
 	chrome.extension.sendMessage({
 		action : "GetInfo"
 	});
+}
 }
 
 function GetSongLabel(song) {
@@ -171,7 +172,7 @@ function AddAllSongs(playlist, currentSong, selectedID) {
 		}
 	}
 }
-
+if(chrome.extension != undefined) {
 chrome.extension.onMessage.addListener(function (request, sender, sendResponse) {
 	if (sender === this)
 		return false;
@@ -209,3 +210,4 @@ chrome.extension.onMessage.addListener(function (request, sender, sendResponse) 
 
 	return true;
 });
+}

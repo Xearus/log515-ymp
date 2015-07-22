@@ -402,7 +402,7 @@ function removeSong(songIndex){
 	}	
 }
 
-if(chrome && chrome.extension) {
+if(QUnit === undefined) {
 	// Listen for front end commands.
 	chrome.extension.onMessage.addListener(function(request, sender, sendResponse) {
 		if (sender === this || request.action === undefined)
