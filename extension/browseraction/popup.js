@@ -34,7 +34,7 @@ function CreateHandler(get_action, get_data) {
 			send_to_background(get_action());
 		};
 }
-if(QUnit === undefined){
+if(window["QUnit"] === undefined){
 window.onload = function () {
 	document.getElementById("btnAddCurrentUrl").onclick = function () {
 		chrome.tabs.query({
